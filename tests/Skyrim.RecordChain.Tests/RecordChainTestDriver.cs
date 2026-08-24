@@ -42,6 +42,11 @@ internal sealed class RecordChainTestDriver(RecordChainFixture fixture)
     public static RunResult Invoke(string[] args, string input = "")
     {
         using var stdin = new StringReader(input);
+        return Invoke(args, stdin);
+    }
+
+    public static RunResult Invoke(string[] args, TextReader stdin)
+    {
         using var stdout = new StringWriter();
         using var stderr = new StringWriter();
 

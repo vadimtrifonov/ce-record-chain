@@ -78,6 +78,44 @@ public sealed class RecordChainBatchTests(RecordChainFixture fixture) : IClassFi
     }
 
     [Fact]
+    public void ValidatesDataFolderBeforeReadingStandardInput()
+    {
+        var stdin = new TrackingTextReader();
+        var result = Invoke(
+        [
+            "--game", "SkyrimSE",
+            "--data-folder", Path.Combine(fixture.Root, "MissingData"),
+            "--load-order", fixture.LoadOrderPath,
+            "--formkeys-from", "-"
+        ],
+            stdin);
+
+        Assert.False(stdin.WasRead);
+        Assert.NotEqual(0, result.ExitCode);
+        Assert.Equal(string.Empty, result.Stdout);
+        Assert.Contains("Data folder does not exist", result.Stderr, StringComparison.OrdinalIgnoreCase);
+    }
+
+    [Fact]
+    public void ValidatesLoadOrderBeforeReadingStandardInput()
+    {
+        var stdin = new TrackingTextReader();
+        var result = Invoke(
+        [
+            "--game", "SkyrimSE",
+            "--data-folder", fixture.DataFolder,
+            "--load-order", Path.Combine(fixture.Root, "missing-plugins.txt"),
+            "--formkeys-from", "-"
+        ],
+            stdin);
+
+        Assert.False(stdin.WasRead);
+        Assert.NotEqual(0, result.ExitCode);
+        Assert.Equal(string.Empty, result.Stdout);
+        Assert.Contains("Load-order file does not exist", result.Stderr, StringComparison.OrdinalIgnoreCase);
+    }
+
+    [Fact]
     public void RejectsDuplicateFormKeyWithoutOutput()
     {
         var result = _driver.RunBatch($"{fixture.MultipleOverrides}\n{fixture.MultipleOverrides}\n");
@@ -146,5 +184,16 @@ public sealed class RecordChainBatchTests(RecordChainFixture fixture) : IClassFi
         Assert.NotEqual(0, result.ExitCode);
         Assert.Equal(string.Empty, result.Stdout);
         Assert.Contains("exactly one", result.Stderr, StringComparison.OrdinalIgnoreCase);
+    }
+
+    private sealed class TrackingTextReader : TextReader
+    {
+        public bool WasRead { get; private set; }
+
+        public override string? ReadLine()
+        {
+            WasRead = true;
+            return null;
+        }
     }
 }

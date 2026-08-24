@@ -21,9 +21,16 @@ public static class Program
         WriteIndented = false
     };
 
-    public static int Main(string[] args) => Run(args, Console.Out, Console.Error);
+    public static int Main(string[] args) => Run(args, Console.In, Console.Out, Console.Error);
 
-    public static int Run(string[] args, TextWriter stdout, TextWriter stderr)
+    public static int Run(string[] args, TextWriter stdout, TextWriter stderr) =>
+        Run(args, TextReader.Null, stdout, stderr);
+
+    public static int Run(
+        string[] args,
+        TextReader stdin,
+        TextWriter stdout,
+        TextWriter stderr)
     {
         if (args.Length == 1 && args[0] is "--help" or "-h")
         {
@@ -34,9 +41,9 @@ public static class Program
         try
         {
             var options = ParseArguments(args);
-            var rows = Query(options);
+            var rows = Query(options, stdin);
 
-            // Materialize every line before writing so operational failures never emit a partial chain.
+            // Materialize every line before writing so failures never emit a partial chain or batch.
             var lines = rows
                 .Select(row => JsonSerializer.Serialize(row, JsonOptions))
                 .ToArray();
@@ -61,7 +68,7 @@ public static class Program
         }
     }
 
-    private static IReadOnlyList<RecordDefinitionRow> Query(CommandOptions options)
+    private static IReadOnlyList<RecordDefinitionRow> Query(CommandOptions options, TextReader stdin)
     {
         var game = ParseGame(options.Game);
         var dataFolder = Path.GetFullPath(options.DataFolder);
@@ -77,11 +84,7 @@ public static class Program
             throw new FileNotFoundException($"Load-order file does not exist: {loadOrderPath}");
         }
 
-        if (!FormKey.TryFactory(options.FormKey, out var formKey) || formKey.IsNull)
-        {
-            throw new CommandLineException($"Invalid FormKey: {options.FormKey}");
-        }
-
+        var formKeys = ReadFormKeys(options, stdin);
         var activeListings = ReadActiveLoadOrder(game, dataFolder, loadOrderPath);
         ValidatePluginFiles(activeListings, dataFolder);
 
@@ -94,7 +97,21 @@ public static class Program
         ValidateLoadOrder(loadOrder, providers);
 
         using var linkCache = loadOrder.ToImmutableLinkCache();
+        var rows = new List<RecordDefinitionRow>();
 
+        foreach (var formKey in formKeys)
+        {
+            rows.AddRange(ResolveChain(linkCache, providers, formKey));
+        }
+
+        return rows;
+    }
+
+    private static IReadOnlyList<RecordDefinitionRow> ResolveChain(
+        ILinkCache<ISkyrimMod, ISkyrimModGetter> linkCache,
+        IReadOnlyDictionary<ModKey, Provider> providers,
+        FormKey formKey)
+    {
         // The record type is not part of a FormKey. One untyped lookup is required to
         // discover the concrete getter registration before the typed chain lookup.
 #pragma warning disable CS0618
@@ -151,6 +168,76 @@ public static class Program
         }
 
         return rows;
+    }
+
+    private static IReadOnlyList<FormKey> ReadFormKeys(
+        CommandOptions options,
+        TextReader stdin)
+    {
+        if (options.FormKey is not null)
+        {
+            return [ParseFormKey(options.FormKey)];
+        }
+
+        var source = options.FormKeysSource
+                     ?? throw new InvalidOperationException("No FormKey input was configured.");
+        if (source == "-")
+        {
+            return ReadFormKeys(stdin);
+        }
+
+        var inputPath = Path.GetFullPath(source);
+        if (!File.Exists(inputPath))
+        {
+            throw new FileNotFoundException($"FormKey input file does not exist: {inputPath}");
+        }
+
+        using var reader = File.OpenText(inputPath);
+        return ReadFormKeys(reader);
+    }
+
+    private static IReadOnlyList<FormKey> ReadFormKeys(TextReader reader)
+    {
+        var formKeys = new List<FormKey>();
+        var seen = new HashSet<FormKey>();
+        var lineNumber = 0;
+
+        while (reader.ReadLine() is { } line)
+        {
+            lineNumber++;
+            var value = line.Trim();
+            if (value.Length == 0)
+            {
+                throw new CommandLineException($"Empty FormKey on input line {lineNumber}.");
+            }
+
+            var formKey = ParseFormKey(value, lineNumber);
+            if (!seen.Add(formKey))
+            {
+                throw new CommandLineException(
+                    $"Duplicate FormKey on input line {lineNumber}: {formKey}");
+            }
+
+            formKeys.Add(formKey);
+        }
+
+        if (formKeys.Count == 0)
+        {
+            throw new CommandLineException("FormKey input is empty.");
+        }
+
+        return formKeys;
+    }
+
+    private static FormKey ParseFormKey(string value, int? lineNumber = null)
+    {
+        if (!FormKey.TryFactory(value, out var formKey) || formKey.IsNull)
+        {
+            var location = lineNumber is { } number ? $" on input line {number}" : string.Empty;
+            throw new CommandLineException($"Invalid FormKey{location}: {value}");
+        }
+
+        return formKey;
     }
 
     private static ILoadOrderListingGetter[] ReadActiveLoadOrder(
@@ -303,6 +390,7 @@ public static class Program
         string? dataFolder = null;
         string? loadOrderPath = null;
         string? formKey = null;
+        string? formKeysSource = null;
 
         for (var index = 0; index < args.Length; index++)
         {
@@ -318,6 +406,9 @@ public static class Program
                 case "--load-order":
                     loadOrderPath = ReadOptionValue(args, ref index, argument, loadOrderPath);
                     break;
+                case "--formkeys-from":
+                    formKeysSource = ReadOptionValue(args, ref index, argument, formKeysSource);
+                    break;
                 default:
                     if (argument.StartsWith("-", StringComparison.Ordinal))
                     {
@@ -326,7 +417,7 @@ public static class Program
 
                     if (formKey is not null)
                     {
-                        throw new CommandLineException("Expected exactly one FormKey.");
+                        throw new CommandLineException("Expected exactly one positional FormKey.");
                     }
 
                     formKey = argument;
@@ -334,13 +425,20 @@ public static class Program
             }
         }
 
-        if (game is null || dataFolder is null || loadOrderPath is null || formKey is null)
+        if (game is null || dataFolder is null || loadOrderPath is null)
         {
             throw new CommandLineException(
-                "Required arguments: --game, --data-folder, --load-order, and one FormKey.");
+                "Required arguments: --game, --data-folder, and --load-order.");
         }
 
-        return new CommandOptions(game, dataFolder, loadOrderPath, formKey);
+        if ((formKey is null) == (formKeysSource is null))
+        {
+            throw new CommandLineException(
+                "Specify exactly one FormKey input: one positional FormKey or " +
+                "--formkeys-from <path|->.");
+        }
+
+        return new CommandOptions(game, dataFolder, loadOrderPath, formKey, formKeysSource);
     }
 
     private static string ReadOptionValue(
@@ -369,15 +467,18 @@ public static class Program
     {
         output.WriteLine("Usage:");
         output.WriteLine("  skyrim-record-chain --game <SkyrimSE|SkyrimVR> --data-folder <Data> --load-order <plugins.txt> <FormKey>");
+        output.WriteLine("  skyrim-record-chain --game <SkyrimSE|SkyrimVR> --data-folder <Data> --load-order <plugins.txt> --formkeys-from <path|->");
         output.WriteLine();
-        output.WriteLine("Writes one compact JSONL row per active record definition in origin-to-winner order.");
+        output.WriteLine("Writes compact JSONL rows for each requested FormKey in input order.");
+        output.WriteLine("Use --formkeys-from - to read one FormKey per line from standard input.");
     }
 
     private sealed record CommandOptions(
         string Game,
         string DataFolder,
         string LoadOrderPath,
-        string FormKey);
+        string? FormKey,
+        string? FormKeysSource);
 
     private sealed record GameChoice(
         GameRelease GameRelease,

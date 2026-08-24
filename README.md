@@ -1,12 +1,12 @@
 # Skyrim Record Chain
 
-Skyrim Record Chain reports the definition history of one Skyrim plugin record.
+Skyrim Record Chain reports the definition history of requested Skyrim plugin records.
 
-It answers one question:
+It answers one question for each FormKey:
 
 > Which active plugins define this FormKey, and in what load-order sequence?
 
-Each JSONL row describes one definition. The first row is the origin, and the last row is the winner.
+Each JSONL row describes one definition. For each FormKey, the first row is the origin and the last row is the winner.
 
 ## Requirements
 
@@ -35,6 +35,8 @@ The task writes version `0.1.0` to a folder and ZIP file under `artifacts`.
 
 ## Usage
 
+Query one FormKey:
+
 ```powershell
 skyrim-record-chain.cmd `
   --game SkyrimSE `
@@ -42,6 +44,30 @@ skyrim-record-chain.cmd `
   --load-order "C:\Path\To\plugins.txt" `
   "03372B:Skyrim.esm"
 ```
+
+Query FormKeys from a file:
+
+```powershell
+skyrim-record-chain.cmd `
+  --game SkyrimSE `
+  --data-folder "C:\Games\Skyrim Special Edition\Data" `
+  --load-order "C:\Path\To\plugins.txt" `
+  --formkeys-from "C:\Path\To\formkeys.txt"
+```
+
+Use `--formkeys-from -` to read standard input:
+
+```powershell
+Get-Content "C:\Path\To\formkeys.txt" | skyrim-record-chain.cmd `
+  --game SkyrimSE `
+  --data-folder "C:\Games\Skyrim Special Edition\Data" `
+  --load-order "C:\Path\To\plugins.txt" `
+  --formkeys-from -
+```
+
+The batch input contains one FormKey per line. Empty lines, invalid FormKeys, and duplicate FormKeys cause an error.
+
+The tool processes FormKeys in input order. It keeps each chain together and orders its rows from origin to winner.
 
 `--game` accepts `SkyrimSE` or `SkyrimVR`.
 
@@ -74,11 +100,13 @@ The command writes compact JSONL to standard output:
 
 Record-specific or context-dependent bits can appear only in `majorFlagsRaw`.
 
-Diagnostics use standard error. An operational error produces no JSONL output and returns a nonzero exit code.
+Diagnostics use standard error. An error produces no JSONL output and returns a nonzero exit code.
+
+Batch mode imports and validates the load order once. If one FormKey fails, the tool does not write rows for other FormKeys.
 
 ## Limits
 
-Worldspaces, cells, and dialog containers can combine children from several plugins. Query each relevant child FormKey separately.
+Worldspaces, cells, and dialog containers can combine children from several plugins. Include each relevant child FormKey in the query.
 
 ## Development
 
@@ -88,4 +116,6 @@ Run all tests:
 mise run test
 ```
 
-The tests generate real Skyrim plugins with Mutagen. They cover overrides, deletion, partial records, containers, ESL records, injected records, and invalid load orders.
+The tests generate real Skyrim plugins with Mutagen. They cover singular and batch queries, overrides, deletion, partial records, containers, ESL records, and injected records.
+
+The tests also cover invalid input and invalid load orders.

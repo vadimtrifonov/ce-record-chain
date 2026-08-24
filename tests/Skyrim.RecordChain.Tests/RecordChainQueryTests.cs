@@ -1,15 +1,18 @@
 using System.Text.Json;
 using Mutagen.Bethesda.Plugins;
 using Xunit;
+using static Skyrim.RecordChain.Tests.RecordChainTestDriver;
 
 namespace Skyrim.RecordChain.Tests;
 
-public sealed class RecordChainTests(RecordChainFixture fixture) : IClassFixture<RecordChainFixture>
+public sealed class RecordChainQueryTests(RecordChainFixture fixture) : IClassFixture<RecordChainFixture>
 {
+    private readonly RecordChainTestDriver _driver = new(fixture);
+
     [Fact]
     public void EmitsOriginToWinnerGoldenJsonl()
     {
-        var result = Run(fixture.MultipleOverrides);
+        var result = _driver.Run(fixture.MultipleOverrides);
 
         Assert.Equal(0, result.ExitCode);
         Assert.Equal(string.Empty, result.Stderr);
@@ -25,7 +28,7 @@ public sealed class RecordChainTests(RecordChainFixture fixture) : IClassFixture
     [Fact]
     public void PreservesDeletedWinnerAndFlags()
     {
-        var result = Run(fixture.DeletedWinner);
+        var result = _driver.Run(fixture.DeletedWinner);
         var rows = ParseRows(result);
 
         Assert.Equal(2, rows.Count);
@@ -40,7 +43,7 @@ public sealed class RecordChainTests(RecordChainFixture fixture) : IClassFixture
     [Fact]
     public void PreservesPartialEmptyLookingDefinition()
     {
-        var result = Run(fixture.PartialDefinition);
+        var result = _driver.Run(fixture.PartialDefinition);
         var rows = ParseRows(result);
 
         Assert.Equal(2, rows.Count);
@@ -54,7 +57,7 @@ public sealed class RecordChainTests(RecordChainFixture fixture) : IClassFixture
     [MemberData(nameof(EmbeddedRecords))]
     public void ResolvesParentAndEmbeddedRecord(FormKey formKey, string expectedType)
     {
-        var result = Run(formKey);
+        var result = _driver.Run(formKey);
         var rows = ParseRows(result);
 
         Assert.Equal(new[] { "Skyrim.esm", "CellPatch.esp" },
@@ -71,7 +74,7 @@ public sealed class RecordChainTests(RecordChainFixture fixture) : IClassFixture
     [Fact]
     public void IncludesCreationClubListingsBeforeExplicitPlugins()
     {
-        var result = Run(fixture.CreationClubRecord);
+        var result = _driver.Run(fixture.CreationClubRecord);
         var rows = ParseRows(result);
 
         Assert.Single(rows);
@@ -82,7 +85,7 @@ public sealed class RecordChainTests(RecordChainFixture fixture) : IClassFixture
     [Fact]
     public void ResolvesLightPluginRecord()
     {
-        var result = Run(fixture.LightRecord);
+        var result = _driver.Run(fixture.LightRecord);
         var rows = ParseRows(result);
 
         Assert.Equal(new[] { "Light.esl", "LightPatch.esp" },
@@ -93,7 +96,7 @@ public sealed class RecordChainTests(RecordChainFixture fixture) : IClassFixture
     [Fact]
     public void MarksActualFirstProviderAsOriginForInjectedRecord()
     {
-        var result = Run(fixture.Injected);
+        var result = _driver.Run(fixture.Injected);
         var rows = ParseRows(result);
 
         Assert.Equal(new[] { "Injector.esp", "InjectionPatch.esp" },
@@ -106,7 +109,7 @@ public sealed class RecordChainTests(RecordChainFixture fixture) : IClassFixture
     [Fact]
     public void ExcludesInactivePlugin()
     {
-        var result = Run(fixture.InactiveOverride);
+        var result = _driver.Run(fixture.InactiveOverride);
         var rows = ParseRows(result);
 
         Assert.Single(rows);
@@ -117,7 +120,7 @@ public sealed class RecordChainTests(RecordChainFixture fixture) : IClassFixture
     [Fact]
     public void ResolvesNewRecordWithoutPriorDefinition()
     {
-        var result = Run(fixture.NewRecord);
+        var result = _driver.Run(fixture.NewRecord);
         var rows = ParseRows(result);
 
         Assert.Single(rows);
@@ -129,7 +132,7 @@ public sealed class RecordChainTests(RecordChainFixture fixture) : IClassFixture
     [Fact]
     public void SupportsSkyrimVr()
     {
-        var result = Run(
+        var result = _driver.Run(
             fixture.VrRecord,
             game: "SkyrimVR",
             dataFolder: fixture.VrDataFolder,
@@ -144,7 +147,7 @@ public sealed class RecordChainTests(RecordChainFixture fixture) : IClassFixture
     [Fact]
     public void FailsWithoutOutputWhenRecordDoesNotExist()
     {
-        var result = Run(FormKey.Factory("00FFFF:Skyrim.esm"));
+        var result = _driver.Run(FormKey.Factory("00FFFF:Skyrim.esm"));
 
         Assert.NotEqual(0, result.ExitCode);
         Assert.Equal(string.Empty, result.Stdout);
@@ -154,7 +157,7 @@ public sealed class RecordChainTests(RecordChainFixture fixture) : IClassFixture
     [Fact]
     public void FailsWithoutOutputWhenActivePluginIsMissing()
     {
-        var result = Run(
+        var result = _driver.Run(
             fixture.MultipleOverrides,
             loadOrderPath: fixture.MissingPluginLoadOrderPath);
 
@@ -166,7 +169,7 @@ public sealed class RecordChainTests(RecordChainFixture fixture) : IClassFixture
     [Fact]
     public void FailsWithoutOutputWhenRequiredMasterIsMissing()
     {
-        var result = Run(
+        var result = _driver.Run(
             fixture.MultipleOverrides,
             loadOrderPath: fixture.MissingMasterLoadOrderPath);
 
@@ -178,7 +181,7 @@ public sealed class RecordChainTests(RecordChainFixture fixture) : IClassFixture
     [Fact]
     public void FailsWithoutOutputWhenMasterLoadsAfterDependent()
     {
-        var result = Run(
+        var result = _driver.Run(
             fixture.LightRecord,
             loadOrderPath: fixture.MisorderedMasterLoadOrderPath);
 
@@ -190,74 +193,21 @@ public sealed class RecordChainTests(RecordChainFixture fixture) : IClassFixture
     [Fact]
     public void RejectsMalformedFormKey()
     {
-        using var stdout = new StringWriter();
-        using var stderr = new StringWriter();
+        var result = _driver.Run("not-a-form-key");
 
-        var exitCode = Program.Run(
-            BuildArgs("not-a-form-key", "SkyrimSE", fixture.DataFolder, fixture.LoadOrderPath),
-            stdout,
-            stderr);
-
-        Assert.NotEqual(0, exitCode);
-        Assert.Equal(string.Empty, stdout.ToString());
-        Assert.Contains("FormKey", stderr.ToString(), StringComparison.OrdinalIgnoreCase);
+        Assert.NotEqual(0, result.ExitCode);
+        Assert.Equal(string.Empty, result.Stdout);
+        Assert.Contains("FormKey", result.Stderr, StringComparison.OrdinalIgnoreCase);
     }
 
     [Fact]
     public void HelpUsesStandardOutput()
     {
-        using var stdout = new StringWriter();
-        using var stderr = new StringWriter();
+        var result = Invoke(["--help"]);
 
-        var exitCode = Program.Run(["--help"], stdout, stderr);
-
-        Assert.Equal(0, exitCode);
-        Assert.Contains("skyrim-record-chain", stdout.ToString(), StringComparison.Ordinal);
-        Assert.Equal(string.Empty, stderr.ToString());
-    }
-
-    private RunResult Run(
-        FormKey formKey,
-        string game = "SkyrimSE",
-        string? dataFolder = null,
-        string? loadOrderPath = null)
-    {
-        using var stdout = new StringWriter();
-        using var stderr = new StringWriter();
-
-        var exitCode = Program.Run(
-            BuildArgs(
-                formKey.ToString(),
-                game,
-                dataFolder ?? fixture.DataFolder,
-                loadOrderPath ?? fixture.LoadOrderPath),
-            stdout,
-            stderr);
-
-        return new RunResult(exitCode, stdout.ToString(), stderr.ToString());
-    }
-
-    private static string[] BuildArgs(string formKey, string game, string dataFolder, string loadOrderPath) =>
-    [
-        "--game", game,
-        "--data-folder", dataFolder,
-        "--load-order", loadOrderPath,
-        formKey
-    ];
-
-    private static List<JsonElement> ParseRows(RunResult result)
-    {
         Assert.Equal(0, result.ExitCode);
+        Assert.Contains("skyrim-record-chain", result.Stdout, StringComparison.Ordinal);
+        Assert.Contains("--formkeys-from", result.Stdout, StringComparison.Ordinal);
         Assert.Equal(string.Empty, result.Stderr);
-
-        return result.Stdout
-            .Split(['\r', '\n'], StringSplitOptions.RemoveEmptyEntries)
-            .Select(line => JsonDocument.Parse(line).RootElement.Clone())
-            .ToList();
     }
-
-    private static string NormalizePath(string path) =>
-        Path.GetFullPath(path).Replace('\\', '/').TrimEnd('/');
-
-    private sealed record RunResult(int ExitCode, string Stdout, string Stderr);
 }

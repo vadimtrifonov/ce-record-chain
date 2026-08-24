@@ -26,7 +26,7 @@ public sealed class RecordChainQueryTests(RecordChainFixture fixture) : IClassFi
     }
 
     [Fact]
-    public void PreservesDeletedWinnerAndFlags()
+    public void PreservesDeletedWinnerAndRawFlags()
     {
         var result = _driver.Run(fixture.DeletedWinner);
         var rows = ParseRows(result);
@@ -35,9 +35,9 @@ public sealed class RecordChainQueryTests(RecordChainFixture fixture) : IClassFi
         var winner = rows[^1];
         Assert.Equal("Late.esp", winner.GetProperty("plugin").GetString());
         Assert.True(winner.GetProperty("deleted").GetBoolean());
+        Assert.False(winner.GetProperty("partial").GetBoolean());
         Assert.True(winner.GetProperty("winner").GetBoolean());
-        Assert.Contains("Deleted", winner.GetProperty("majorFlags").EnumerateArray().Select(x => x.GetString()));
-        Assert.NotEqual(0U, winner.GetProperty("majorFlagsRaw").GetUInt32());
+        Assert.NotEqual(0U, winner.GetProperty("majorRecordFlagsRaw").GetUInt32());
     }
 
     [Fact]
@@ -49,7 +49,8 @@ public sealed class RecordChainQueryTests(RecordChainFixture fixture) : IClassFi
         Assert.Equal(2, rows.Count);
         var winner = rows[^1];
         Assert.Equal("Late.esp", winner.GetProperty("plugin").GetString());
-        Assert.Equal(0x0000_4000U, winner.GetProperty("majorFlagsRaw").GetUInt32());
+        Assert.Equal(0x0000_4000U, winner.GetProperty("majorRecordFlagsRaw").GetUInt32());
+        Assert.True(winner.GetProperty("partial").GetBoolean());
         Assert.Equal(JsonValueKind.Null, winner.GetProperty("editorId").ValueKind);
     }
 

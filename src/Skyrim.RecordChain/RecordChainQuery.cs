@@ -9,6 +9,8 @@ namespace Skyrim.RecordChain;
 
 internal static class RecordChainQuery
 {
+    private const uint PartialFormFlag = 0x0000_4000;
+
     internal static IReadOnlyList<RecordDefinitionRow> Execute(RecordChainRequest request)
     {
         var game = GetGame(request.Game);
@@ -89,9 +91,9 @@ internal static class RecordChainQuery
                 PluginPath: provider.PluginPath,
                 Type: record.Registration.Name,
                 EditorId: record.EditorID,
-                MajorFlagsRaw: rawFlags,
-                MajorFlags: GetMajorFlagNames(rawFlags),
+                MajorRecordFlagsRaw: rawFlags,
                 Deleted: record.IsDeleted,
+                Partial: IsPartial(record, rawFlags),
                 Origin: index == 0,
                 Winner: index == contexts.Length - 1));
         }
@@ -208,24 +210,10 @@ internal static class RecordChainQuery
         }
     }
 
-    private static IReadOnlyList<string> GetMajorFlagNames(uint rawFlags)
-    {
-        if (rawFlags == 0)
-        {
-            return Array.Empty<string>();
-        }
-
-        return Enum.GetValues<SkyrimMajorRecord.SkyrimMajorRecordFlag>()
-            .Select(flag => new
-            {
-                Flag = flag,
-                Value = unchecked((uint)(int)flag)
-            })
-            .Where(item => item.Value != 0 && (rawFlags & item.Value) == item.Value)
-            .OrderBy(item => item.Value)
-            .Select(item => item.Flag.ToString())
-            .ToArray();
-    }
+    // xEdit 4.1.6 TES5 definitions assign bit 14 to CELL, DIAL, and WRLD.
+    private static bool IsPartial(IMajorRecordGetter record, uint rawFlags) =>
+        (rawFlags & PartialFormFlag) != 0 &&
+        record is ICellGetter or IDialogTopicGetter or IWorldspaceGetter;
 
     private static GameChoice GetGame(GameKind game) => game switch
     {
@@ -265,8 +253,8 @@ internal sealed record RecordDefinitionRow(
     string PluginPath,
     string Type,
     string? EditorId,
-    uint MajorFlagsRaw,
-    IReadOnlyList<string> MajorFlags,
+    uint MajorRecordFlagsRaw,
     bool Deleted,
+    bool Partial,
     bool Origin,
     bool Winner);

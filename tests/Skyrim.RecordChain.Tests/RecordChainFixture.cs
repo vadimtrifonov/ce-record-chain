@@ -62,7 +62,10 @@ public sealed class RecordChainFixture : IDisposable
         skyrim.Npcs.Add(new Npc(MultipleOverrides, SeRelease) { EditorID = "BaseNpc" });
         skyrim.Npcs.Add(new Npc(DeletedWinner, SeRelease) { EditorID = "DeletedNpc" });
         skyrim.Npcs.Add(new Npc(InactiveOverride, SeRelease) { EditorID = "ActiveOnlyNpc" });
-        skyrim.Quests.Add(new Quest(PartialDefinition, SeRelease) { EditorID = "BaseQuest" });
+        skyrim.DialogTopics.Add(new DialogTopic(PartialDefinition, SeRelease)
+        {
+            EditorID = "BaseTopic"
+        });
         AddCell(skyrim, "Base", Cell, PlacedObject);
         WriteMod(DataFolder, skyrim);
 
@@ -85,7 +88,7 @@ public sealed class RecordChainFixture : IDisposable
         var late = NewMod("Late.esp", SeRelease, "Skyrim.esm");
         late.Npcs.Add(new Npc(MultipleOverrides, SeRelease) { EditorID = "LateNpc" });
         late.Npcs.Add(new Npc(DeletedWinner, SeRelease) { EditorID = "DeletedNpc", IsDeleted = true });
-        late.Quests.Add(new Quest(PartialDefinition, SeRelease)
+        late.DialogTopics.Add(new DialogTopic(PartialDefinition, SeRelease)
         {
             MajorRecordFlagsRaw = 0x0000_4000
         });

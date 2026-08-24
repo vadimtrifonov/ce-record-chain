@@ -88,17 +88,16 @@ The launcher starts the managed DLL with `dotnet`. This method is compatible wit
 The command writes compact JSONL to standard output:
 
 ```jsonl
-{"formKey":"03372B:Skyrim.esm","loadOrderIndex":0,"plugin":"Skyrim.esm","pluginPath":"C:/Game/Data/Skyrim.esm","type":"Quest","editorId":"MQ101","majorFlagsRaw":0,"majorFlags":[],"deleted":false,"origin":true,"winner":false}
-{"formKey":"03372B:Skyrim.esm","loadOrderIndex":112,"plugin":"Quick Start - SE.esp","pluginPath":"C:/Game/Data/Quick Start - SE.esp","type":"Quest","editorId":"MQ101","majorFlagsRaw":0,"majorFlags":[],"deleted":false,"origin":false,"winner":true}
+{"formKey":"03372B:Skyrim.esm","loadOrderIndex":0,"plugin":"Skyrim.esm","pluginPath":"C:/Game/Data/Skyrim.esm","type":"Quest","editorId":"MQ101","majorRecordFlagsRaw":0,"deleted":false,"partial":false,"origin":true,"winner":false}
+{"formKey":"03372B:Skyrim.esm","loadOrderIndex":112,"plugin":"Quick Start - SE.esp","pluginPath":"C:/Game/Data/Quick Start - SE.esp","type":"Quest","editorId":"MQ101","majorRecordFlagsRaw":0,"deleted":false,"partial":false,"origin":false,"winner":true}
 ```
 
 - `loadOrderIndex` is the zero-based index of the active plugin.
 - `origin` marks the first resolved definition. An injected record can originate outside `formKey`'s plugin.
 - `winner` marks the final definition. It does not describe a merged container state.
-- `majorFlagsRaw` preserves every record-header bit.
-- `majorFlags` names bits from Mutagen's common Skyrim flag enum.
-
-Record-specific or context-dependent bits can appear only in `majorFlagsRaw`.
+- `majorRecordFlagsRaw` contains all record-header flag bits in one 32-bit unsigned integer.
+- `deleted` reports whether the definition is deleted.
+- `partial` reports the Partial Form bit for cell, dialog-topic, and worldspace records.
 
 Diagnostics use standard error. An error produces no JSONL output and returns a nonzero exit code.
 

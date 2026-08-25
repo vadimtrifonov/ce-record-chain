@@ -13,9 +13,7 @@ Each JSONL row describes one definition. For each FormKey, the first row is the 
 - Windows
 - .NET 10 runtime
 
-Source builds require [mise](https://mise.jdx.dev/). Mise installs the pinned .NET SDK.
-
-The repository pins .NET and all NuGet packages.
+Source builds use [mise](https://mise.jdx.dev/). Mise installs the .NET 10 SDK.
 
 ## Build
 
@@ -31,7 +29,7 @@ Create the Windows release archive:
 mise run publish
 ```
 
-The task writes version `0.1.0` to a folder and ZIP file under `artifacts`.
+The task writes a folder and ZIP file under `artifacts`.
 
 ## Usage
 

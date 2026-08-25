@@ -38,7 +38,7 @@ The task writes version `0.1.0` to a folder and ZIP file under `artifacts`.
 Query one FormKey:
 
 ```powershell
-skyrim-record-chain.cmd `
+skyrim-record-chain.exe `
   --game SkyrimSE `
   --data-folder "C:\Games\Skyrim Special Edition\Data" `
   --load-order "C:\Path\To\plugins.txt" `
@@ -48,7 +48,7 @@ skyrim-record-chain.cmd `
 Query FormKeys from a file:
 
 ```powershell
-skyrim-record-chain.cmd `
+skyrim-record-chain.exe `
   --game SkyrimSE `
   --data-folder "C:\Games\Skyrim Special Edition\Data" `
   --load-order "C:\Path\To\plugins.txt" `
@@ -58,7 +58,7 @@ skyrim-record-chain.cmd `
 Use `--formkeys-from -` to read standard input:
 
 ```powershell
-Get-Content "C:\Path\To\formkeys.txt" | skyrim-record-chain.cmd `
+Get-Content "C:\Path\To\formkeys.txt" | skyrim-record-chain.exe `
   --game SkyrimSE `
   --data-folder "C:\Games\Skyrim Special Edition\Data" `
   --load-order "C:\Path\To\plugins.txt" `
@@ -79,9 +79,9 @@ The tool resolves the active load order from these sources:
 
 The tool excludes disabled and ghosted entries. It fails if an active plugin or required master is missing.
 
-Run `skyrim-record-chain.cmd` through the selected MO2 profile when the Data folder uses the MO2 virtual file system.
+Run `skyrim-record-chain.exe` through the selected MO2 profile when the Data folder uses the MO2 virtual file system.
 
-The launcher starts the managed DLL with `dotnet`. This method is compatible with MO2's USVFS injection.
+The published executable disables CET compatibility. CET-enabled .NET 9 and later apphosts crash under MO2's USVFS injection.
 
 ## Output
 

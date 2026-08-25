@@ -8,7 +8,8 @@
     <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
     <RestorePackagesWithLockFile>true</RestorePackagesWithLockFile>
     <NuGetLockFilePath>$(MSBuildThisFileDirectory)..\..\packages.lock.json</NuGetLockFilePath>
-    <UseAppHost>false</UseAppHost>
+    <UseAppHost>true</UseAppHost>
+    <CetCompat>false</CetCompat>
     <AssemblyName>skyrim-record-chain</AssemblyName>
     <RootNamespace>Skyrim.RecordChain</RootNamespace>
     <Version>0.1.0</Version>
@@ -16,10 +17,6 @@
 
   <ItemGroup>
     <PackageReference Include="Mutagen.Bethesda.Skyrim" Version="0.54.4" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <None Include="skyrim-record-chain.cmd" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" />
   </ItemGroup>
 
 </Project>

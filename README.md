@@ -6,30 +6,10 @@ It answers one question for each FormKey:
 
 > Which active plugins define this FormKey, and in what load-order sequence?
 
-Each JSONL row describes one definition. For each FormKey, the first row is the origin and the last row is the winner.
-
 ## Requirements
 
 - Windows
 - .NET 10 runtime
-
-Source builds use [mise](https://mise.jdx.dev/). Mise installs the .NET 10 SDK.
-
-## Build
-
-```powershell
-mise trust
-mise install
-mise run build
-```
-
-Create the Windows release archive:
-
-```powershell
-mise run publish
-```
-
-The task writes a folder and ZIP file under `artifacts`.
 
 ## Usage
 
@@ -64,10 +44,9 @@ Get-Content "C:\Path\To\formkeys.txt" | skyrim-record-chain.exe `
 ```
 
 The batch input contains one FormKey per line. Empty lines, invalid FormKeys, and duplicate FormKeys cause an error.
-
 The tool processes FormKeys in input order. It keeps each chain together and orders its rows from origin to winner.
 
-`--game` accepts `SkyrimSE` or `SkyrimVR`.
+`--game` accepts `SkyrimSE` or `SkyrimVR`. `SkyrimSE` covers Special Edition and Anniversary Edition.
 
 The tool resolves the active load order from these sources:
 
@@ -83,7 +62,7 @@ The published executable disables CET compatibility. CET-enabled .NET 9 and late
 
 ## Output
 
-The command writes compact JSONL to standard output:
+The tool writes compact JSONL to standard output:
 
 ```jsonl
 {"formKey":"03372B:Skyrim.esm","loadOrderIndex":0,"plugin":"Skyrim.esm","pluginPath":"C:/Game/Data/Skyrim.esm","type":"Quest","editorId":"MQ101","majorRecordFlagsRaw":0,"deleted":false,"partial":false,"origin":true,"winner":false}
@@ -107,12 +86,30 @@ Worldspaces, cells, and dialog containers can combine children from several plug
 
 ## Development
 
-Run all tests:
+Source builds use [mise](https://mise.jdx.dev/). Mise installs the .NET 10 SDK.
+
+### Build
+
+```powershell
+mise trust
+mise install
+mise run build
+```
+
+### Test
 
 ```powershell
 mise run test
 ```
 
-The tests generate real Skyrim plugins with Mutagen. They cover singular and batch queries, overrides, deletion, partial records, containers, ESL records, and injected records.
+The tests generate Skyrim plugins with Mutagen.
 
-The tests also cover invalid input and invalid load orders.
+### Publish
+
+Create the Windows release archive:
+
+```powershell
+mise run publish
+```
+
+The task writes a folder and ZIP file under `artifacts`.

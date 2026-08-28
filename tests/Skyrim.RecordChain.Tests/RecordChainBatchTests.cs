@@ -78,14 +78,14 @@ public sealed class RecordChainBatchTests(RecordChainFixture fixture) : IClassFi
     }
 
     [Fact]
-    public void ValidatesDataFolderBeforeReadingStandardInput()
+    public void ValidatesMo2RootBeforeReadingStandardInput()
     {
         var stdin = new TrackingTextReader();
         var result = Invoke(
         [
             "--game", "SkyrimSE",
-            "--data-folder", Path.Combine(fixture.Root, "MissingData"),
-            "--load-order", fixture.LoadOrderPath,
+            "--mo2-root", Path.Combine(fixture.Root, "Missing MO2"),
+            "--profile", fixture.ProfileName,
             "--formkeys-from", "-"
         ],
             stdin);
@@ -93,18 +93,18 @@ public sealed class RecordChainBatchTests(RecordChainFixture fixture) : IClassFi
         Assert.False(stdin.WasRead);
         Assert.NotEqual(0, result.ExitCode);
         Assert.Equal(string.Empty, result.Stdout);
-        Assert.Contains("Data folder does not exist", result.Stderr, StringComparison.OrdinalIgnoreCase);
+        Assert.Contains("MO2 instance directory does not exist", result.Stderr, StringComparison.OrdinalIgnoreCase);
     }
 
     [Fact]
-    public void ValidatesLoadOrderBeforeReadingStandardInput()
+    public void ValidatesProfileBeforeReadingStandardInput()
     {
         var stdin = new TrackingTextReader();
         var result = Invoke(
         [
             "--game", "SkyrimSE",
-            "--data-folder", fixture.DataFolder,
-            "--load-order", Path.Combine(fixture.Root, "missing-plugins.txt"),
+            "--mo2-root", fixture.Mo2Root,
+            "--profile", fixture.MissingProfileFilesProfile,
             "--formkeys-from", "-"
         ],
             stdin);
@@ -112,7 +112,7 @@ public sealed class RecordChainBatchTests(RecordChainFixture fixture) : IClassFi
         Assert.False(stdin.WasRead);
         Assert.NotEqual(0, result.ExitCode);
         Assert.Equal(string.Empty, result.Stdout);
-        Assert.Contains("Load-order file does not exist", result.Stderr, StringComparison.OrdinalIgnoreCase);
+        Assert.Contains("plugins.txt", result.Stderr, StringComparison.OrdinalIgnoreCase);
     }
 
     [Fact]
@@ -120,7 +120,7 @@ public sealed class RecordChainBatchTests(RecordChainFixture fixture) : IClassFi
     {
         var result = _driver.RunBatch($"{fixture.MultipleOverrides}\n{fixture.MultipleOverrides}\n");
 
-        Assert.NotEqual(0, result.ExitCode);
+        Assert.Equal(2, result.ExitCode);
         Assert.Equal(string.Empty, result.Stdout);
         Assert.Contains("duplicate FormKey", result.Stderr, StringComparison.OrdinalIgnoreCase);
         Assert.Contains("line 2", result.Stderr, StringComparison.OrdinalIgnoreCase);
@@ -131,7 +131,7 @@ public sealed class RecordChainBatchTests(RecordChainFixture fixture) : IClassFi
     {
         var result = _driver.RunBatch($"{fixture.MultipleOverrides}\nnot-a-form-key\n");
 
-        Assert.NotEqual(0, result.ExitCode);
+        Assert.Equal(2, result.ExitCode);
         Assert.Equal(string.Empty, result.Stdout);
         Assert.Contains("line 2", result.Stderr, StringComparison.OrdinalIgnoreCase);
         Assert.Contains("not-a-form-key", result.Stderr, StringComparison.Ordinal);
@@ -142,7 +142,7 @@ public sealed class RecordChainBatchTests(RecordChainFixture fixture) : IClassFi
     {
         var result = _driver.RunBatch(string.Empty);
 
-        Assert.NotEqual(0, result.ExitCode);
+        Assert.Equal(2, result.ExitCode);
         Assert.Equal(string.Empty, result.Stdout);
         Assert.Contains("empty", result.Stderr, StringComparison.OrdinalIgnoreCase);
     }
@@ -152,7 +152,7 @@ public sealed class RecordChainBatchTests(RecordChainFixture fixture) : IClassFi
     {
         var result = _driver.RunBatch($"{fixture.MultipleOverrides}\n\n");
 
-        Assert.NotEqual(0, result.ExitCode);
+        Assert.Equal(2, result.ExitCode);
         Assert.Equal(string.Empty, result.Stdout);
         Assert.Contains("line 2", result.Stderr, StringComparison.OrdinalIgnoreCase);
     }
@@ -162,7 +162,7 @@ public sealed class RecordChainBatchTests(RecordChainFixture fixture) : IClassFi
     {
         var result = _driver.RunBatch($"{fixture.MultipleOverrides}\n00FFFF:Skyrim.esm\n");
 
-        Assert.NotEqual(0, result.ExitCode);
+        Assert.Equal(1, result.ExitCode);
         Assert.Equal(string.Empty, result.Stdout);
         Assert.Contains("00FFFF:Skyrim.esm", result.Stderr, StringComparison.OrdinalIgnoreCase);
         Assert.Contains("does not exist", result.Stderr, StringComparison.OrdinalIgnoreCase);
@@ -174,14 +174,14 @@ public sealed class RecordChainBatchTests(RecordChainFixture fixture) : IClassFi
         var result = Invoke(
         [
             "--game", "SkyrimSE",
-            "--data-folder", fixture.DataFolder,
-            "--load-order", fixture.LoadOrderPath,
+            "--mo2-root", fixture.Mo2Root,
+            "--profile", fixture.ProfileName,
             "--formkeys-from", "-",
             fixture.MultipleOverrides.ToString()
         ],
             fixture.DeletedWinner.ToString());
 
-        Assert.NotEqual(0, result.ExitCode);
+        Assert.Equal(2, result.ExitCode);
         Assert.Equal(string.Empty, result.Stdout);
         Assert.Contains("exactly one", result.Stderr, StringComparison.OrdinalIgnoreCase);
     }

@@ -9,32 +9,32 @@ internal sealed class RecordChainTestDriver(RecordChainFixture fixture)
     public RunResult Run(
         FormKey formKey,
         string game = "SkyrimSE",
-        string? dataFolder = null,
-        string? loadOrderPath = null) =>
-        Run(formKey.ToString(), game, dataFolder, loadOrderPath);
+        string? mo2Root = null,
+        string? profile = null) =>
+        Run(formKey.ToString(), game, mo2Root, profile);
 
     public RunResult Run(
         string formKey,
         string game = "SkyrimSE",
-        string? dataFolder = null,
-        string? loadOrderPath = null) =>
+        string? mo2Root = null,
+        string? profile = null) =>
         Invoke(BuildArgs(
             formKey,
             game,
-            dataFolder ?? fixture.DataFolder,
-            loadOrderPath ?? fixture.LoadOrderPath));
+            GetRoot(game, mo2Root),
+            profile ?? GetProfile(game)));
 
     public RunResult RunBatch(
         string input,
         string source = "-",
         string game = "SkyrimSE",
-        string? dataFolder = null,
-        string? loadOrderPath = null) =>
+        string? mo2Root = null,
+        string? profile = null) =>
         Invoke(
         [
             "--game", game,
-            "--data-folder", dataFolder ?? fixture.DataFolder,
-            "--load-order", loadOrderPath ?? fixture.LoadOrderPath,
+            "--mo2-root", GetRoot(game, mo2Root),
+            "--profile", profile ?? GetProfile(game),
             "--formkeys-from", source
         ],
             input);
@@ -68,15 +68,25 @@ internal sealed class RecordChainTestDriver(RecordChainFixture fixture)
     public static string NormalizePath(string path) =>
         Path.GetFullPath(path).Replace('\\', '/').TrimEnd('/');
 
+    private string GetRoot(string game, string? mo2Root) =>
+        mo2Root ?? (game.Equals("SkyrimVR", StringComparison.OrdinalIgnoreCase)
+            ? fixture.VrMo2Root
+            : fixture.Mo2Root);
+
+    private string GetProfile(string game) =>
+        game.Equals("SkyrimVR", StringComparison.OrdinalIgnoreCase)
+            ? fixture.VrProfileName
+            : fixture.ProfileName;
+
     private static string[] BuildArgs(
         string formKey,
         string game,
-        string dataFolder,
-        string loadOrderPath) =>
+        string mo2Root,
+        string profile) =>
     [
         "--game", game,
-        "--data-folder", dataFolder,
-        "--load-order", loadOrderPath,
+        "--mo2-root", mo2Root,
+        "--profile", profile,
         formKey
     ];
 }

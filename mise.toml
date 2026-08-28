@@ -17,8 +17,8 @@ shell = "powershell.exe -NoProfile -Command"
 run = [
   '''
   $paths = @(
-    'artifacts/skyrim-record-chain-1.0.0-win-x64'
-    'artifacts/skyrim-record-chain-1.0.0-win-x64.zip'
+    'artifacts/skyrim-record-chain-2.0.0-win-x64'
+    'artifacts/skyrim-record-chain-2.0.0-win-x64.zip'
   )
 
   foreach ($path in $paths) {
@@ -28,6 +28,6 @@ run = [
   }
   ''',
   "dotnet restore src/Skyrim.RecordChain/Skyrim.RecordChain.csproj --locked-mode",
-  "dotnet publish src/Skyrim.RecordChain/Skyrim.RecordChain.csproj --configuration Release --no-restore --no-self-contained -p:DebugType=None -p:DebugSymbols=false --output artifacts/skyrim-record-chain-1.0.0-win-x64",
-  "& C:/Windows/System32/tar.exe -a -c -f artifacts/skyrim-record-chain-1.0.0-win-x64.zip -C artifacts/skyrim-record-chain-1.0.0-win-x64 .",
+  "dotnet publish src/Skyrim.RecordChain/Skyrim.RecordChain.csproj --configuration Release --no-restore --no-self-contained -p:DebugType=None -p:DebugSymbols=false --output artifacts/skyrim-record-chain-2.0.0-win-x64",
+  "& C:/Windows/System32/tar.exe -a -c -f artifacts/skyrim-record-chain-2.0.0-win-x64.zip -C artifacts/skyrim-record-chain-2.0.0-win-x64 .",
 ]

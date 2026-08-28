@@ -1,3 +1,4 @@
+using System.Diagnostics;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 
@@ -17,9 +18,6 @@ public static class Program
 
     public static int Main(string[] args) => Run(args, Console.In, Console.Out, Console.Error);
 
-    public static int Run(string[] args, TextWriter stdout, TextWriter stderr) =>
-        Run(args, TextReader.Null, stdout, stderr);
-
     public static int Run(
         string[] args,
         TextReader stdin,
@@ -34,8 +32,13 @@ public static class Program
 
         try
         {
-            var request = CommandLine.Parse(args, stdin);
-            var rows = RecordChainQuery.Execute(request);
+            EnsureOutsideMo2Usvfs();
+            var options = CommandLine.ParseOptions(args);
+
+            // Validate the profile before a batch request can block on standard input.
+            var profile = Mo2Profile.Load(options.Game, options.Mo2Root, options.Profile);
+            var formKeys = CommandLine.ReadFormKeys(options, stdin);
+            var rows = RecordChainQuery.Execute(profile, formKeys);
 
             // Materialize every line before writing so failures never emit a partial chain or batch.
             var lines = rows
@@ -49,16 +52,42 @@ public static class Program
 
             return 0;
         }
-        catch (CommandLineException ex)
+        catch (CommandLineException exception)
         {
-            stderr.WriteLine($"error: {ex.Message}");
+            stderr.WriteLine($"error: {exception.Message}");
             stderr.WriteLine("Run with --help for usage.");
             return UsageError;
         }
-        catch (Exception ex)
+        catch (Exception exception)
         {
-            stderr.WriteLine($"error: {ex.Message}");
+            stderr.WriteLine($"error: {exception.Message}");
             return OperationalError;
+        }
+    }
+
+    private static void EnsureOutsideMo2Usvfs()
+    {
+        if (!OperatingSystem.IsWindows())
+        {
+            return;
+        }
+
+        var injected = false;
+        try
+        {
+            injected = Process.GetCurrentProcess().Modules
+                .Cast<ProcessModule>()
+                .Any(module => module.ModuleName.StartsWith("usvfs", StringComparison.OrdinalIgnoreCase));
+        }
+        catch
+        {
+            // Module enumeration is a guard, not a prerequisite for normal execution.
+        }
+
+        if (injected)
+        {
+            throw new InvalidOperationException(
+                "skyrim-record-chain must run outside MO2. USVFS hides the physical plugin locations.");
         }
     }
 }

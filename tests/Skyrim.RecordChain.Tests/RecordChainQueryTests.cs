@@ -18,11 +18,44 @@ public sealed class RecordChainQueryTests(RecordChainFixture fixture) : IClassFi
         Assert.Equal(string.Empty, result.Stderr);
 
         var goldenPath = Path.Combine(AppContext.BaseDirectory, "Golden", "multiple-overrides.jsonl");
+        var encodedRoot = JsonSerializer.Serialize(NormalizePath(fixture.Mo2Root))[1..^1];
         var expected = File.ReadAllText(goldenPath)
-            .Replace("<DATA>", NormalizePath(fixture.DataFolder), StringComparison.Ordinal)
+            .Replace("<ROOT>", encodedRoot, StringComparison.Ordinal)
             .ReplaceLineEndings("\n");
 
         Assert.Equal(expected, result.Stdout.ReplaceLineEndings("\n"));
+    }
+
+    [Fact]
+    public void UsesOneFormKeySpellingForTheWholeChain()
+    {
+        const string requested = "000800:skyrim.esm";
+
+        var rows = ParseRows(_driver.Run(requested));
+
+        Assert.Equal(3, rows.Count);
+        Assert.All(rows, row => Assert.Equal(requested, row.GetProperty("formKey").GetString()));
+    }
+
+    [Fact]
+    public void SelectsPhysicalPluginProvidersByMo2Priority()
+    {
+        var rows = ParseRows(_driver.Run(fixture.MultipleOverrides));
+
+        Assert.Equal(
+            NormalizePath(Path.Combine(fixture.OverwriteFolder, "Skyrim.esm")),
+            rows[0].GetProperty("pluginPath").GetString());
+        Assert.Equal(
+            NormalizePath(Path.Combine(fixture.HighModFolder, "Early.esp")),
+            rows[1].GetProperty("pluginPath").GetString());
+        Assert.Equal(
+            NormalizePath(Path.Combine(fixture.LowModFolder, "Late.esp")),
+            rows[2].GetProperty("pluginPath").GetString());
+
+        var gameDataRow = Assert.Single(ParseRows(_driver.Run(fixture.NewRecord)));
+        Assert.Equal(
+            NormalizePath(Path.Combine(fixture.DataFolder, "NewRecords.esp")),
+            gameDataRow.GetProperty("pluginPath").GetString());
     }
 
     [Fact]
@@ -81,6 +114,9 @@ public sealed class RecordChainQueryTests(RecordChainFixture fixture) : IClassFi
         Assert.Single(rows);
         Assert.Equal("ccFixture.esl", rows[0].GetProperty("plugin").GetString());
         Assert.Equal(5, rows[0].GetProperty("loadOrderIndex").GetInt32());
+        Assert.Equal(
+            NormalizePath(Path.Combine(fixture.LowModFolder, "ccFixture.esl")),
+            rows[0].GetProperty("pluginPath").GetString());
     }
 
     [Fact]
@@ -131,18 +167,24 @@ public sealed class RecordChainQueryTests(RecordChainFixture fixture) : IClassFi
     }
 
     [Fact]
-    public void SupportsSkyrimVr()
+    public void SupportsSkyrimVrWithMo2DefaultsAndNoOverwriteDirectory()
     {
-        var result = _driver.Run(
-            fixture.VrRecord,
-            game: "SkyrimVR",
-            dataFolder: fixture.VrDataFolder,
-            loadOrderPath: fixture.VrLoadOrderPath);
+        var result = _driver.Run(fixture.VrRecord, game: "SkyrimVR");
         var rows = ParseRows(result);
 
         Assert.Single(rows);
         Assert.Equal("VrNpc", rows[0].GetProperty("editorId").GetString());
         Assert.Equal(0, rows[0].GetProperty("loadOrderIndex").GetInt32());
+    }
+
+    [Fact]
+    public void SkyrimVrIgnoresSkyrimCcc()
+    {
+        var result = _driver.Run(fixture.VrCreationClubRecord, game: "SkyrimVR");
+
+        Assert.Equal(1, result.ExitCode);
+        Assert.Equal(string.Empty, result.Stdout);
+        Assert.Contains("does not exist", result.Stderr, StringComparison.OrdinalIgnoreCase);
     }
 
     [Fact]
@@ -160,7 +202,7 @@ public sealed class RecordChainQueryTests(RecordChainFixture fixture) : IClassFi
     {
         var result = _driver.Run(
             fixture.MultipleOverrides,
-            loadOrderPath: fixture.MissingPluginLoadOrderPath);
+            profile: fixture.MissingPluginProfile);
 
         Assert.NotEqual(0, result.ExitCode);
         Assert.Equal(string.Empty, result.Stdout);
@@ -172,7 +214,7 @@ public sealed class RecordChainQueryTests(RecordChainFixture fixture) : IClassFi
     {
         var result = _driver.Run(
             fixture.MultipleOverrides,
-            loadOrderPath: fixture.MissingMasterLoadOrderPath);
+            profile: fixture.MissingMasterProfile);
 
         Assert.NotEqual(0, result.ExitCode);
         Assert.Equal(string.Empty, result.Stdout);
@@ -184,7 +226,7 @@ public sealed class RecordChainQueryTests(RecordChainFixture fixture) : IClassFi
     {
         var result = _driver.Run(
             fixture.LightRecord,
-            loadOrderPath: fixture.MisorderedMasterLoadOrderPath);
+            profile: fixture.MisorderedMasterProfile);
 
         Assert.NotEqual(0, result.ExitCode);
         Assert.Equal(string.Empty, result.Stdout);
@@ -196,7 +238,7 @@ public sealed class RecordChainQueryTests(RecordChainFixture fixture) : IClassFi
     {
         var result = _driver.Run("not-a-form-key");
 
-        Assert.NotEqual(0, result.ExitCode);
+        Assert.Equal(2, result.ExitCode);
         Assert.Equal(string.Empty, result.Stdout);
         Assert.Contains("FormKey", result.Stderr, StringComparison.OrdinalIgnoreCase);
     }
@@ -208,6 +250,8 @@ public sealed class RecordChainQueryTests(RecordChainFixture fixture) : IClassFi
 
         Assert.Equal(0, result.ExitCode);
         Assert.Contains("skyrim-record-chain", result.Stdout, StringComparison.Ordinal);
+        Assert.Contains("--mo2-root", result.Stdout, StringComparison.Ordinal);
+        Assert.Contains("--profile", result.Stdout, StringComparison.Ordinal);
         Assert.Contains("--formkeys-from", result.Stdout, StringComparison.Ordinal);
         Assert.Equal(string.Empty, result.Stderr);
     }

@@ -10,16 +10,19 @@ It answers one question for each FormKey:
 
 - Windows
 - .NET 10 runtime
+- A Mod Organizer 2 instance and profile
 
 ## Usage
+
+Run the tool outside MO2. The tool reads the profile and physical plugin files directly.
 
 Query one FormKey:
 
 ```powershell
 skyrim-record-chain.exe `
   --game SkyrimSE `
-  --data-folder "C:\Games\Skyrim Special Edition\Data" `
-  --load-order "C:\Path\To\plugins.txt" `
+  --mo2-root "C:\Games\Skyrim\My MO2 Instance" `
+  --profile Default `
   "03372B:Skyrim.esm"
 ```
 
@@ -28,8 +31,8 @@ Query FormKeys from a file:
 ```powershell
 skyrim-record-chain.exe `
   --game SkyrimSE `
-  --data-folder "C:\Games\Skyrim Special Edition\Data" `
-  --load-order "C:\Path\To\plugins.txt" `
+  --mo2-root "C:\Games\Skyrim\My MO2 Instance" `
+  --profile Default `
   --formkeys-from "C:\Path\To\formkeys.txt"
 ```
 
@@ -38,39 +41,46 @@ Use `--formkeys-from -` to read standard input:
 ```powershell
 Get-Content "C:\Path\To\formkeys.txt" | skyrim-record-chain.exe `
   --game SkyrimSE `
-  --data-folder "C:\Games\Skyrim Special Edition\Data" `
-  --load-order "C:\Path\To\plugins.txt" `
+  --mo2-root "C:\Games\Skyrim\My MO2 Instance" `
+  --profile Default `
   --formkeys-from -
 ```
 
-The batch input contains one FormKey per line. Empty lines, invalid FormKeys, and duplicate FormKeys cause an error.
+Batch input contains one FormKey per line.
+
 The tool processes FormKeys in input order. It keeps each chain together and orders its rows from origin to winner.
 
 `--game` accepts `SkyrimSE` or `SkyrimVR`. `SkyrimSE` covers Special Edition and Anniversary Edition.
 
-The tool resolves the active load order from these sources:
+## Profile resolution
 
-1. Skyrim implicit plugins
-2. Installed entries from `Skyrim.ccc` beside the Data folder
-3. Enabled entries from the supplied `plugins.txt`
+For Skyrim SE, the active order combines these sources:
 
-The tool excludes disabled and ghosted entries. It fails if an active plugin or required master is missing.
+1. The five implicit plugins.
+2. Installed plugins from the physical `Skyrim.ccc` file.
+3. Enabled, non-ghosted entries from the profile `plugins.txt` file.
 
-Run `skyrim-record-chain.exe` through the selected MO2 profile when the Data folder uses the MO2 virtual file system.
+For Skyrim VR, the active order combines the six implicit plugins and enabled, non-ghosted `plugins.txt` entries.
 
-The published executable disables CET compatibility. CET-enabled .NET 9 and later apphosts crash under MO2's USVFS injection.
+For each active plugin, the tool selects the first physical file in this order:
+
+1. The profile Overwrite directory.
+2. Enabled managed mods, from strongest to weakest priority.
+3. The physical game Data directory.
+
+A missing active plugin or required master causes an error. The `pluginPath` field reports the selected physical file.
 
 ## Output
 
 The tool writes compact JSONL to standard output:
 
 ```jsonl
-{"formKey":"03372B:Skyrim.esm","loadOrderIndex":0,"plugin":"Skyrim.esm","pluginPath":"C:/Game/Data/Skyrim.esm","type":"Quest","editorId":"MQ101","majorRecordFlagsRaw":0,"deleted":false,"partial":false,"origin":true,"winner":false}
-{"formKey":"03372B:Skyrim.esm","loadOrderIndex":112,"plugin":"Quick Start - SE.esp","pluginPath":"C:/Game/Data/Quick Start - SE.esp","type":"Quest","editorId":"MQ101","majorRecordFlagsRaw":0,"deleted":false,"partial":false,"origin":false,"winner":true}
+{"formKey":"03372B:Skyrim.esm","loadOrderIndex":0,"plugin":"Skyrim.esm","pluginPath":"C:/Games/Skyrim/My MO2 Instance/mods/Updated Masters/Skyrim.esm","type":"Quest","editorId":"MQ101","majorRecordFlagsRaw":0,"deleted":false,"partial":false,"origin":true,"winner":false}
+{"formKey":"03372B:Skyrim.esm","loadOrderIndex":112,"plugin":"Quick Start - SE.esp","pluginPath":"C:/Games/Skyrim/My MO2 Instance/mods/Optional Quick Start/Quick Start - SE.esp","type":"Quest","editorId":"MQ101","majorRecordFlagsRaw":0,"deleted":false,"partial":false,"origin":false,"winner":true}
 ```
 
 - `loadOrderIndex` is the zero-based index of the active plugin.
-- `origin` marks the first resolved definition. An injected record can originate outside `formKey`'s plugin.
+- `origin` marks the first resolved definition. An injected record can originate outside the plugin in `formKey`.
 - `winner` marks the final definition. It does not describe a merged container state.
 - `majorRecordFlagsRaw` contains all record-header flag bits in one 32-bit unsigned integer.
 - `deleted` reports whether the definition is deleted.
@@ -102,7 +112,7 @@ mise run build
 mise run test
 ```
 
-The tests generate Skyrim plugins with Mutagen.
+The tests generate Skyrim plugins and an isolated MO2 profile with Mutagen.
 
 ### Publish
 

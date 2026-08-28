@@ -1,6 +1,6 @@
 # Skyrim Record Chain
 
-Skyrim Record Chain reports the definition history of requested Skyrim plugin records.
+Skyrim Record Chain reports the definition history of requested Skyrim plugin records in a Mod Organizer 2 profile.
 
 It answers one question for each FormKey:
 
@@ -10,7 +10,6 @@ It answers one question for each FormKey:
 
 - Windows
 - .NET 10 runtime
-- A Mod Organizer 2 instance and profile
 
 ## Usage
 
@@ -86,9 +85,10 @@ The tool writes compact JSONL to standard output:
 - `deleted` reports whether the definition is deleted.
 - `partial` reports the Partial Form bit for cell, dialog-topic, and worldspace records.
 
-Diagnostics use standard error. An error produces no JSONL output and returns a nonzero exit code.
+A requested FormKey with no active definition produces no row.
+A request with no matches succeeds with empty standard output.
 
-Batch mode imports and validates the load order once. If one FormKey fails, the tool does not write rows for other FormKeys.
+Diagnostics use standard error. An error produces no JSONL output and returns a nonzero exit code.
 
 ## Limits
 

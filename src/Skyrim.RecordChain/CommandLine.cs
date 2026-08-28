@@ -101,7 +101,9 @@ internal static class CommandLine
         output.WriteLine("  skyrim-record-chain --game <SkyrimSE|SkyrimVR> --mo2-root <instance> --profile <name> <FormKey>");
         output.WriteLine("  skyrim-record-chain --game <SkyrimSE|SkyrimVR> --mo2-root <instance> --profile <name> --formkeys-from <path|->");
         output.WriteLine();
-        output.WriteLine("Writes compact JSONL rows for each requested FormKey in input order.");
+        output.WriteLine("Writes one compact JSONL row for each active plugin definition.");
+        output.WriteLine("A requested FormKey with no active definition produces no row.");
+        output.WriteLine("A request with no matches succeeds with empty standard output.");
         output.WriteLine("Use --formkeys-from - to read one FormKey per line from standard input.");
     }
 

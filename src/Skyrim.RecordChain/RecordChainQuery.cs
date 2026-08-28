@@ -50,18 +50,13 @@ internal static class RecordChainQuery
         if (!linkCache.TryResolveContext(formKey, out var winningContext, ResolveTarget.Winner))
 #pragma warning restore CS0618
         {
-            throw new InvalidOperationException($"Record does not exist in the active load order: {formKey}");
+            return [];
         }
 
         var getterType = winningContext.Record.Registration.GetterType;
         var contexts = linkCache
             .ResolveAllContexts(formKey, getterType, ResolveTarget.Origin)
             .ToArray();
-
-        if (contexts.Length == 0)
-        {
-            throw new InvalidOperationException($"Record does not exist in the active load order: {formKey}");
-        }
 
         var rows = new List<RecordDefinitionRow>(contexts.Length);
         var previousIndex = -1;

@@ -180,21 +180,13 @@ public sealed class RecordChainQueryTests(RecordChainFixture fixture) : IClassFi
     [Fact]
     public void SkyrimVrIgnoresSkyrimCcc()
     {
-        var result = _driver.Run(fixture.VrCreationClubRecord, game: "SkyrimVR");
-
-        Assert.Equal(1, result.ExitCode);
-        Assert.Equal(string.Empty, result.Stdout);
-        Assert.Contains("does not exist", result.Stderr, StringComparison.OrdinalIgnoreCase);
+        Assert.Empty(ParseRows(_driver.Run(fixture.VrCreationClubRecord, game: "SkyrimVR")));
     }
 
     [Fact]
-    public void FailsWithoutOutputWhenRecordDoesNotExist()
+    public void RecordChainCanBeEmpty()
     {
-        var result = _driver.Run(FormKey.Factory("00FFFF:Skyrim.esm"));
-
-        Assert.NotEqual(0, result.ExitCode);
-        Assert.Equal(string.Empty, result.Stdout);
-        Assert.Contains("does not exist", result.Stderr, StringComparison.OrdinalIgnoreCase);
+        Assert.Empty(ParseRows(_driver.Run(FormKey.Factory("00FFFF:Skyrim.esm"))));
     }
 
     [Fact]

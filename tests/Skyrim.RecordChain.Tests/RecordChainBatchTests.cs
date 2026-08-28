@@ -158,14 +158,14 @@ public sealed class RecordChainBatchTests(RecordChainFixture fixture) : IClassFi
     }
 
     [Fact]
-    public void FailureAfterValidFormKeyProducesNoOutput()
+    public void EmptyChainProducesNoRowsInBatch()
     {
-        var result = _driver.RunBatch($"{fixture.MultipleOverrides}\n00FFFF:Skyrim.esm\n");
+        var rows = ParseRows(_driver.RunBatch(
+            $"{fixture.NewRecord}\n00FFFF:Skyrim.esm\n{fixture.InactiveOverride}\n"));
 
-        Assert.Equal(1, result.ExitCode);
-        Assert.Equal(string.Empty, result.Stdout);
-        Assert.Contains("00FFFF:Skyrim.esm", result.Stderr, StringComparison.OrdinalIgnoreCase);
-        Assert.Contains("does not exist", result.Stderr, StringComparison.OrdinalIgnoreCase);
+        Assert.Equal(
+            [fixture.NewRecord.ToString(), fixture.InactiveOverride.ToString()],
+            rows.Select(row => row.GetProperty("formKey").GetString()));
     }
 
     [Fact]

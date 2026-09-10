@@ -18,7 +18,8 @@ mise install
 
 Each query supplies an explicit game, MO2 root, profile, and FormKey input.
 
-`--game` accepts `SkyrimSE` or `SkyrimVR`. `SkyrimSE` covers Special Edition and Anniversary Edition.
+`--game` accepts `SkyrimSE` or `SkyrimVR`.
+`SkyrimSE` covers Special Edition and Anniversary Edition.
 `--mo2-root` identifies the instance directory that contains `ModOrganizer.ini`.
 `--profile` identifies a profile by name, not by directory path.
 
@@ -29,7 +30,8 @@ FormKeys use the form `03372B:Skyrim.esm`.
 - `"<FormKey>"`
 - `--formkeys-from "<path|->"` for one FormKey per line
 
-`-` reads the CLI process's standard input. Empty, invalid, and duplicate batch entries are errors.
+`-` reads the CLI process's standard input.
+Empty, invalid, and duplicate batch entries are errors.
 
 ## Run context
 
@@ -62,7 +64,8 @@ Each row contains:
 - Chain position: `origin`, `winner`
 
 `majorRecordFlagsRaw` is the raw unsigned 32-bit record-header flag mask.
-`origin` marks the first resolved definition. Its provider can differ from the ModKey in `formKey` for an injected record.
+`origin` marks the first resolved definition.
+Its provider can differ from the ModKey in `formKey` for an injected record.
 `partial` decodes the Partial Form bit for cells, dialog topics, and worldspaces.
 
 Deleted and partial definitions remain in the chain.
@@ -70,7 +73,8 @@ Deleted and partial definitions remain in the chain.
 A requested FormKey with no active definition produces no row.
 A request with no matches succeeds with empty standard output.
 
-Diagnostics use standard error. An error returns a nonzero exit code and leaves standard output empty, including for batch input.
+Diagnostics use standard error.
+An error returns a nonzero exit code and leaves standard output empty, including for batch input.
 
 ## Limits
 

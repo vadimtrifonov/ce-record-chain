@@ -13,7 +13,8 @@ It answers one question for each FormKey:
 
 ## Usage
 
-Run the tool outside MO2. The tool reads the profile and physical plugin files directly.
+Run the tool outside MO2.
+The tool reads the profile and physical plugin files directly.
 
 Query one FormKey:
 
@@ -47,9 +48,11 @@ Get-Content "C:\Path\To\formkeys.txt" | skyrim-record-chain.exe `
 
 Batch input contains one FormKey per line.
 
-The tool processes FormKeys in input order. It keeps each chain together and orders its rows from origin to winner.
+The tool processes FormKeys in input order.
+It keeps each chain together and orders its rows from origin to winner.
 
-`--game` accepts `SkyrimSE` or `SkyrimVR`. `SkyrimSE` covers Special Edition and Anniversary Edition.
+`--game` accepts `SkyrimSE` or `SkyrimVR`.
+`SkyrimSE` covers Special Edition and Anniversary Edition.
 
 ## Profile resolution
 
@@ -67,7 +70,8 @@ For each active plugin, the tool selects the first physical file in this order:
 2. Enabled managed mods, from strongest to weakest priority.
 3. The physical game Data directory.
 
-A missing active plugin or required master causes an error. The `pluginPath` field reports the selected physical file.
+A missing active plugin or required master causes an error.
+The `pluginPath` field reports the selected physical file.
 
 ## Output
 
@@ -79,8 +83,10 @@ The tool writes compact JSONL to standard output:
 ```
 
 - `loadOrderIndex` is the zero-based index of the active plugin.
-- `origin` marks the first resolved definition. An injected record can originate outside the plugin in `formKey`.
-- `winner` marks the final definition. It does not describe a merged container state.
+- `origin` marks the first resolved definition.
+  An injected record can originate outside the plugin in `formKey`.
+- `winner` marks the final definition.
+  It does not describe a merged container state.
 - `majorRecordFlagsRaw` contains all record-header flag bits in one 32-bit unsigned integer.
 - `deleted` reports whether the definition is deleted.
 - `partial` reports the Partial Form bit for cell, dialog-topic, and worldspace records.
@@ -88,15 +94,18 @@ The tool writes compact JSONL to standard output:
 A requested FormKey with no active definition produces no row.
 A request with no matches succeeds with empty standard output.
 
-Diagnostics use standard error. An error produces no JSONL output and returns a nonzero exit code.
+Diagnostics use standard error.
+An error produces no JSONL output and returns a nonzero exit code.
 
 ## Limits
 
-Worldspaces, cells, and dialog containers can combine children from several plugins. Include each relevant child FormKey in the query.
+Worldspaces, cells, and dialog containers can combine children from several plugins.
+Include each relevant child FormKey in the query.
 
 ## Development
 
-Source builds use [mise](https://mise.jdx.dev/). Mise installs the .NET 10 SDK.
+Source builds use [mise](https://mise.jdx.dev/).
+Mise installs the .NET 10 SDK.
 
 ### Build
 

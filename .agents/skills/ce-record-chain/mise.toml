@@ -1,0 +1,3 @@
+[tools]
+dotnet = "10"
+"github:vadimtrifonov/ce-record-chain" = "3.0.0"

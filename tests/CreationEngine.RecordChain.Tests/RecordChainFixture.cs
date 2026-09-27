@@ -3,7 +3,7 @@ using Mutagen.Bethesda.Plugins;
 using Mutagen.Bethesda.Plugins.Records;
 using Mutagen.Bethesda.Skyrim;
 
-namespace Skyrim.RecordChain.Tests;
+namespace CreationEngine.RecordChain.Tests;
 
 public sealed class RecordChainFixture : IDisposable
 {
@@ -11,7 +11,7 @@ public sealed class RecordChainFixture : IDisposable
 
     public string Root { get; } = Path.Combine(
         Path.GetTempPath(),
-        "skyrim-record-chain-tests",
+        "ce-record-chain-tests",
         "Tést-" + Guid.NewGuid().ToString("N"));
 
     public string Mo2Root => Path.Combine(Root, "SE");
@@ -106,6 +106,10 @@ public sealed class RecordChainFixture : IDisposable
         {
             EditorID = "BaseTopic"
         });
+        skyrim.Globals.Add(new GlobalInt(FormKey.Factory("000804:Skyrim.esm"), SeRelease)
+        {
+            EditorID = "FixtureGlobal", Data = 1
+        });
         AddCell(skyrim, "Base", Cell, PlacedObject);
         WriteMod(DataFolder, skyrim);
         CopyMod(DataFolder, LowModFolder, skyrim.ModKey.FileName);
@@ -136,6 +140,10 @@ public sealed class RecordChainFixture : IDisposable
         late.DialogTopics.Add(new DialogTopic(PartialDefinition, SeRelease)
         {
             MajorRecordFlagsRaw = 0x0000_4000
+        });
+        late.Globals.Add(new GlobalInt(FormKey.Factory("000804:Skyrim.esm"), SeRelease)
+        {
+            EditorID = "FixtureGlobal", Data = 2
         });
         WriteMod(DataFolder, late);
         CopyMod(DataFolder, LowModFolder, late.ModKey.FileName);

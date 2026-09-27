@@ -5,11 +5,11 @@ VisualStudioVersion = 17.0.31903.59
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "src", "src", "{2FF1C988-573E-49E2-85B0-E16CAF9CDF5E}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Skyrim.RecordChain", "src\Skyrim.RecordChain\Skyrim.RecordChain.csproj", "{780A34FE-D558-4DB4-A34E-7E4F0C43DACF}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CreationEngine.RecordChain", "src\CreationEngine.RecordChain\CreationEngine.RecordChain.csproj", "{780A34FE-D558-4DB4-A34E-7E4F0C43DACF}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "tests", "tests", "{449FFC68-2D4F-41AE-A2BA-E219655590B6}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Skyrim.RecordChain.Tests", "tests\Skyrim.RecordChain.Tests\Skyrim.RecordChain.Tests.csproj", "{82462188-5001-4175-B462-AA0CDF908DC6}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CreationEngine.RecordChain.Tests", "tests\CreationEngine.RecordChain.Tests\CreationEngine.RecordChain.Tests.csproj", "{82462188-5001-4175-B462-AA0CDF908DC6}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

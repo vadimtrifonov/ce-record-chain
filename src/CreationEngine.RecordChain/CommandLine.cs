@@ -1,6 +1,7 @@
+using CreationEngine.RecordChain.Games;
 using Mutagen.Bethesda.Plugins;
 
-namespace Skyrim.RecordChain;
+namespace CreationEngine.RecordChain;
 
 internal static class CommandLine
 {
@@ -98,8 +99,8 @@ internal static class CommandLine
     internal static void WriteHelp(TextWriter output)
     {
         output.WriteLine("Usage:");
-        output.WriteLine("  skyrim-record-chain --game <SkyrimSE|SkyrimVR> --mo2-root <instance> --profile <name> <FormKey>");
-        output.WriteLine("  skyrim-record-chain --game <SkyrimSE|SkyrimVR> --mo2-root <instance> --profile <name> --formkeys-from <path|->");
+        output.WriteLine("  ce-record-chain --game <SkyrimSE|SkyrimVR|Starfield> --mo2-root <instance> --profile <name> <FormKey>");
+        output.WriteLine("  ce-record-chain --game <SkyrimSE|SkyrimVR|Starfield> --mo2-root <instance> --profile <name> --formkeys-from <path|->");
         output.WriteLine();
         output.WriteLine("Writes one compact JSONL row for each active plugin definition.");
         output.WriteLine("A requested FormKey with no active definition produces no row.");
@@ -163,8 +164,13 @@ internal static class CommandLine
             return GameKind.SkyrimVR;
         }
 
+        if (value.Equals("Starfield", StringComparison.OrdinalIgnoreCase))
+        {
+            return GameKind.Starfield;
+        }
+
         throw new CommandLineException(
-            $"Unsupported game '{value}'. Expected SkyrimSE or SkyrimVR.");
+            $"Unsupported game '{value}'. Expected SkyrimSE, SkyrimVR or Starfield.");
     }
 
     private static string GetMo2Root(string path)

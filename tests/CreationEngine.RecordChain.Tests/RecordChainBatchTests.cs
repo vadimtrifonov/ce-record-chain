@@ -1,7 +1,7 @@
 using Xunit;
-using static Skyrim.RecordChain.Tests.RecordChainTestDriver;
+using static CreationEngine.RecordChain.Tests.RecordChainTestDriver;
 
-namespace Skyrim.RecordChain.Tests;
+namespace CreationEngine.RecordChain.Tests;
 
 public sealed class RecordChainBatchTests(RecordChainFixture fixture) : IClassFixture<RecordChainFixture>
 {

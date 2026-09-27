@@ -1,9 +1,9 @@
 using System.Text.Json;
 using Mutagen.Bethesda.Plugins;
 using Xunit;
-using static Skyrim.RecordChain.Tests.RecordChainTestDriver;
+using static CreationEngine.RecordChain.Tests.RecordChainTestDriver;
 
-namespace Skyrim.RecordChain.Tests;
+namespace CreationEngine.RecordChain.Tests;
 
 public sealed class RecordChainQueryTests(RecordChainFixture fixture) : IClassFixture<RecordChainFixture>
 {
@@ -117,6 +117,14 @@ public sealed class RecordChainQueryTests(RecordChainFixture fixture) : IClassFi
         Assert.Equal(
             NormalizePath(Path.Combine(fixture.LowModFolder, "ccFixture.esl")),
             rows[0].GetProperty("pluginPath").GetString());
+    }
+
+    [Fact]
+    public void ResolvesGlobalWithConcreteVariantsSharingOneSignature()
+    {
+        var rows = ParseRows(_driver.Run("000804:Skyrim.esm"));
+        Assert.Equal(new[] { "Skyrim.esm", "Late.esp" }, rows.Select(row => row.GetProperty("plugin").GetString()));
+        Assert.All(rows, row => Assert.Equal("GlobalInt", row.GetProperty("type").GetString()));
     }
 
     [Fact]
@@ -241,7 +249,7 @@ public sealed class RecordChainQueryTests(RecordChainFixture fixture) : IClassFi
         var result = Invoke(["--help"]);
 
         Assert.Equal(0, result.ExitCode);
-        Assert.Contains("skyrim-record-chain", result.Stdout, StringComparison.Ordinal);
+        Assert.Contains("ce-record-chain", result.Stdout, StringComparison.Ordinal);
         Assert.Contains("--mo2-root", result.Stdout, StringComparison.Ordinal);
         Assert.Contains("--profile", result.Stdout, StringComparison.Ordinal);
         Assert.Contains("--formkeys-from", result.Stdout, StringComparison.Ordinal);

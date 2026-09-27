@@ -1,38 +1,46 @@
 using Mutagen.Bethesda.Plugins;
 
-namespace Skyrim.RecordChain;
+namespace CreationEngine.RecordChain.Mo2;
 
 internal sealed class Mo2Profile
 {
     private readonly string _gameDataFolder;
+    private readonly string _documentsFolder;
     private readonly IReadOnlyList<string> _enabledModFolders;
     private readonly string _overwriteFolder;
 
     private Mo2Profile(
-        GameKind game,
-        string gameDataFolder,
+        string gameRoot,
+        string profileFolder,
         IReadOnlyList<string> enabledModFolders,
         string overwriteFolder,
         string pluginsPath,
-        string creationClubPath)
+        IniFile organizerSettings,
+        string documentsFolder)
     {
-        Game = game;
-        _gameDataFolder = gameDataFolder;
+        GameRoot = gameRoot;
+        ProfileFolder = profileFolder;
+        PluginsPath = pluginsPath;
+        OrganizerSettings = organizerSettings;
+        _gameDataFolder = Path.Combine(gameRoot, "Data");
+        _documentsFolder = documentsFolder;
         _enabledModFolders = enabledModFolders;
         _overwriteFolder = overwriteFolder;
-        ActivePlugins = PluginList.ReadActive(this, pluginsPath, creationClubPath);
     }
 
-    internal GameKind Game { get; }
-    internal IReadOnlyList<ActivePlugin> ActivePlugins { get; }
+    internal string GameRoot { get; }
+    internal string ProfileFolder { get; }
+    internal string PluginsPath { get; }
+    private IniFile OrganizerSettings { get; }
 
-    internal static Mo2Profile Load(GameKind game, string instanceRoot, string profileName)
+    internal static Mo2Profile Load(
+        string expectedGameName, string instanceRoot, string profileName, string documentsFolder)
     {
         var organizerIniPath = Path.Combine(instanceRoot, "ModOrganizer.ini");
         var organizerIni = IniFile.Read(organizerIniPath);
 
         ValidateConfiguredGame(
-            game,
+            expectedGameName,
             QSettingsValue.DecodeString(
                 organizerIni.Get("General", "gameName"),
                 $"[General] gameName in {organizerIniPath}"),
@@ -88,12 +96,13 @@ internal sealed class Mo2Profile
         var pluginsPath = RequireFile(profileFolder, "plugins.txt");
 
         return new Mo2Profile(
-            game,
-            gameDataFolder,
+            gameRoot,
+            profileFolder,
             Mo2ModList.ReadEnabled(modlistPath, modsFolder),
             overwriteFolder,
             pluginsPath,
-            Path.Combine(gameRoot, "Skyrim.ccc"));
+            organizerIni,
+            documentsFolder);
     }
 
     internal string? TryResolvePluginPath(ModKey modKey)
@@ -117,6 +126,24 @@ internal sealed class Mo2Profile
 
         return ExistingFile(_gameDataFolder, fileName);
     }
+
+    internal string GetIniFolder(string myGamesFolder)
+    {
+        var settingsPath = Path.Combine(ProfileFolder, "settings.ini");
+        var local = File.Exists(settingsPath)
+            ? IniFile.Read(settingsPath).Get("General", "LocalSettings")
+            : null;
+        local ??= OrganizerSettings.Get("Settings", "profile_local_inis") ?? "true";
+        var useLocal = local.Trim().ToLowerInvariant() switch
+        {
+            "true" or "1" => true,
+            "false" or "0" => false,
+            _ => throw new InvalidOperationException($"Invalid profile local-INI setting: {local}")
+        };
+        return useLocal ? ProfileFolder : GetMyGamesFolder(myGamesFolder);
+    }
+
+    internal string GetMyGamesFolder(string name) => Path.Combine(_documentsFolder, "My Games", name);
 
     private static string? ExistingFile(string folder, string fileName)
     {
@@ -171,23 +198,17 @@ internal sealed class Mo2Profile
         return value;
     }
 
-    private static void ValidateConfiguredGame(GameKind game, string? configuredName, string iniPath)
+    private static void ValidateConfiguredGame(string expectedName, string? configuredName, string iniPath)
     {
         if (string.IsNullOrWhiteSpace(configuredName))
         {
             throw new InvalidOperationException($"{iniPath} has no [General] gameName value.");
         }
 
-        var expectedName = game switch
-        {
-            GameKind.SkyrimSE => "Skyrim Special Edition",
-            GameKind.SkyrimVR => "Skyrim VR",
-            _ => throw new ArgumentOutOfRangeException(nameof(game), game, null)
-        };
         if (!configuredName.Equals(expectedName, StringComparison.OrdinalIgnoreCase))
         {
             throw new InvalidOperationException(
-                $"Requested game {game} requires {iniPath} gameName '{expectedName}', but found '{configuredName}'.");
+                $"Requested game requires {iniPath} gameName '{expectedName}', but found '{configuredName}'.");
         }
     }
 
@@ -213,8 +234,3 @@ internal sealed class Mo2Profile
     private static string NormalizePath(string path) =>
         Path.GetFullPath(path).Replace('\\', '/');
 }
-
-internal sealed record ActivePlugin(
-    ModKey ModKey,
-    int LoadOrderIndex,
-    string PhysicalPath);

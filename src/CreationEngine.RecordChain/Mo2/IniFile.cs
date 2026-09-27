@@ -1,4 +1,4 @@
-namespace Skyrim.RecordChain;
+namespace CreationEngine.RecordChain.Mo2;
 
 internal sealed class IniFile
 {

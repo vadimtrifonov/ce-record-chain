@@ -2,7 +2,7 @@ using System.Text.Json;
 using Mutagen.Bethesda.Plugins;
 using Xunit;
 
-namespace Skyrim.RecordChain.Tests;
+namespace CreationEngine.RecordChain.Tests;
 
 internal sealed class RecordChainTestDriver(RecordChainFixture fixture)
 {
@@ -39,24 +39,24 @@ internal sealed class RecordChainTestDriver(RecordChainFixture fixture)
         ],
             input);
 
-    public static RunResult Invoke(string[] args, string input = "")
+    public static RunResult Invoke(string[] args, string input = "", string? documentsFolder = null)
     {
         using var stdin = new StringReader(input);
-        return Invoke(args, stdin);
+        return Invoke(args, stdin, documentsFolder);
     }
 
-    public static RunResult Invoke(string[] args, TextReader stdin)
+    public static RunResult Invoke(string[] args, TextReader stdin, string? documentsFolder = null)
     {
         using var stdout = new StringWriter();
         using var stderr = new StringWriter();
 
-        var exitCode = Program.Run(args, stdin, stdout, stderr);
+        var exitCode = Program.Run(args, stdin, stdout, stderr, documentsFolder);
         return new RunResult(exitCode, stdout.ToString(), stderr.ToString());
     }
 
     public static List<JsonElement> ParseRows(RunResult result)
     {
-        Assert.Equal(0, result.ExitCode);
+        Assert.True(result.ExitCode == 0, result.Stderr);
         Assert.Equal(string.Empty, result.Stderr);
 
         return result.Stdout

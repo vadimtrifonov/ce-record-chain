@@ -13,6 +13,17 @@
           "Noggog.CSharpExt": "4.3.0"
         }
       },
+      "Mutagen.Bethesda.Starfield": {
+        "type": "Direct",
+        "requested": "[0.54.4, )",
+        "resolved": "0.54.4",
+        "contentHash": "3/weEanIpv3xN++0SWKjXU1jsbzmxpSbJXCqWL4B+GmnvPxo21UAtFAq554AC1zXttw/0ee5wnxE3OYyJb1exA==",
+        "dependencies": {
+          "Loqui": "3.7.0",
+          "Mutagen.Bethesda.Core": "0.54.4",
+          "Noggog.CSharpExt": "4.3.0"
+        }
+      },
       "DynamicData": {
         "type": "Transitive",
         "resolved": "9.4.31",

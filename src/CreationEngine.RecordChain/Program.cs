@@ -1,8 +1,11 @@
+using CreationEngine.RecordChain.Games;
+using CreationEngine.RecordChain.Mo2;
+using CreationEngine.RecordChain.Query;
 using System.Diagnostics;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 
-namespace Skyrim.RecordChain;
+namespace CreationEngine.RecordChain;
 
 public static class Program
 {
@@ -22,7 +25,8 @@ public static class Program
         string[] args,
         TextReader stdin,
         TextWriter stdout,
-        TextWriter stderr)
+        TextWriter stderr,
+        string? documentsFolder = null)
     {
         if (CommandLine.IsHelp(args))
         {
@@ -36,9 +40,12 @@ public static class Program
             var options = CommandLine.ParseOptions(args);
 
             // Validate the profile before a batch request can block on standard input.
-            var profile = Mo2Profile.Load(options.Game, options.Mo2Root, options.Profile);
+            var game = GameSupport.Create(options.Game);
+            var profile = Mo2Profile.Load(game.Mo2GameName, options.Mo2Root, options.Profile,
+                documentsFolder ?? Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments));
+            var plugins = game.ReadActivePlugins(profile);
             var formKeys = CommandLine.ReadFormKeys(options, stdin);
-            var rows = RecordChainQuery.Execute(profile, formKeys);
+            var rows = RecordChainQuery.Execute(game, plugins, formKeys);
 
             // Materialize every line before writing so failures never emit a partial chain or batch.
             var lines = rows
@@ -87,7 +94,7 @@ public static class Program
         if (injected)
         {
             throw new InvalidOperationException(
-                "skyrim-record-chain must run outside MO2. USVFS hides the physical plugin locations.");
+                "ce-record-chain must run outside MO2. USVFS hides the physical plugin locations.");
         }
     }
 }

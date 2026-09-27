@@ -1,6 +1,6 @@
 using System.Text;
 
-namespace Skyrim.RecordChain;
+namespace CreationEngine.RecordChain.Mo2;
 
 // Decodes the scalar QSettings INI values used for MO2 paths.
 internal static class QSettingsValue

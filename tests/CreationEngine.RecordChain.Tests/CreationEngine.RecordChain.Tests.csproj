@@ -20,7 +20,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\..\src\Skyrim.RecordChain\Skyrim.RecordChain.csproj" />
+    <ProjectReference Include="..\..\src\CreationEngine.RecordChain\CreationEngine.RecordChain.csproj" />
   </ItemGroup>
 
   <ItemGroup>

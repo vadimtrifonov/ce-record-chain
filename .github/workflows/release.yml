@@ -25,7 +25,7 @@ jobs:
           }
 
           $version = $tag.Substring(1)
-          [xml] $project = Get-Content "src/Skyrim.RecordChain/Skyrim.RecordChain.csproj"
+          [xml] $project = Get-Content "src/CreationEngine.RecordChain/CreationEngine.RecordChain.csproj"
           $projectVersion = [string] $project.Project.PropertyGroup.Version
           if ($projectVersion -ne $version) {
             throw "Project version $projectVersion does not match tag $tag."
@@ -44,7 +44,7 @@ jobs:
         shell: pwsh
         run: |
           $version = "${{ github.ref_name }}".Substring(1)
-          $executable = "artifacts/skyrim-record-chain-$version-win-x64/skyrim-record-chain.exe"
+          $executable = "artifacts/ce-record-chain-$version-win-x64/ce-record-chain.exe"
 
           & $executable --help
           if ($LASTEXITCODE -ne 0) { throw "Published executable smoke test failed." }
@@ -57,7 +57,7 @@ jobs:
           $tag = "${{ github.ref_name }}"
           $version = $tag.Substring(1)
           gh release create $tag `
-            "artifacts/skyrim-record-chain-$version-win-x64.zip" `
+            "artifacts/ce-record-chain-$version-win-x64.zip" `
             --verify-tag `
             --title $tag `
             --generate-notes

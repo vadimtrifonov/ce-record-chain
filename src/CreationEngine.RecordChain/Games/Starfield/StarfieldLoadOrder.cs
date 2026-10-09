@@ -103,8 +103,7 @@ internal static class StarfieldLoadOrder
         var paths = new[]
         {
             Path.Combine(profile.GameRoot, "Starfield.ini"),
-            Path.Combine(profile.GetIniFolder("Starfield"), "StarfieldCustom.ini"),
-            Path.Combine(profile.ProfileFolder, "initweaks.ini")
+            Path.Combine(profile.GetIniFolder("Starfield"), "StarfieldCustom.ini")
         }.Where(File.Exists).ToArray();
 
         // Use Windows' game-INI rules, not the parser for MO2's QSettings files.

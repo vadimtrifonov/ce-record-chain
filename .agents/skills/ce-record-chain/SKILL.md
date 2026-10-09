@@ -1,6 +1,6 @@
 ---
 name: ce-record-chain
-description: List the plugins that define a record, from origin to winner, by FormKey in Skyrim SE/AE, Skyrim VR or Starfield MO2 profiles.
+description: List the plugins that define a record, from origin to winner, by FormKey in Skyrim or Starfield MO2 profiles.
 ---
 
 # Creation Engine Record Chain

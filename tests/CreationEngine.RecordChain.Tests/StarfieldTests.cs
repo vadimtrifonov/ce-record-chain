@@ -190,7 +190,7 @@ public sealed class StarfieldTests(StarfieldFixture fixture) : IClassFixture<Sta
     }
 
     [Fact]
-    public void TestFileGuardHonorsIniOverridesAndWindowsSyntax()
+    public void TestFileGuardUsesOnlyEffectiveGameInis()
     {
         using var isolated = new StarfieldFixture();
         var baseIni = Path.Combine(isolated.Root, "Game", "Starfield.ini");
@@ -198,24 +198,17 @@ public sealed class StarfieldTests(StarfieldFixture fixture) : IClassFixture<Sta
         var tweaks = Path.Combine(isolated.Root, "profiles", DefaultProfile, "initweaks.ini");
         File.WriteAllText(baseIni, "[General] ; section comment\nsTestFile10=Inactive.esm\n");
         File.WriteAllText(customIni, "[Display]\niSize W=1920\n");
-        AssertRejected(baseIni);
+        File.WriteAllText(tweaks, "[General]\nsTestFile10=\n");
+
+        var result = isolated.RunBatch([Key("Starfield.esm"), Key("Small.esm")]);
+        Assert.Equal(1, result.ExitCode);
+        Assert.Empty(result.Stdout);
+        Assert.Contains("sTestFile10", result.Stderr);
+        Assert.Contains(baseIni, result.Stderr);
 
         File.WriteAllText(customIni, "[General] ; section comment\nsTestFile10=\"\"\n");
-        Assert.Equal(2, ParseRows(isolated.Run(Key("Starfield.esm"))).Count);
-
         File.WriteAllText(tweaks, "[General]\nsTestFile10='Inactive.esm'\n");
-        AssertRejected(tweaks);
-        File.WriteAllText(tweaks, "[General]\nsTestFile10=\n");
         Assert.Equal(2, ParseRows(isolated.Run(Key("Starfield.esm"))).Count);
-
-        void AssertRejected(string source)
-        {
-            var result = isolated.RunBatch([Key("Starfield.esm"), Key("Small.esm")]);
-            Assert.Equal(1, result.ExitCode);
-            Assert.Empty(result.Stdout);
-            Assert.Contains("sTestFile10", result.Stderr);
-            Assert.Contains(source, result.Stderr);
-        }
     }
 
     [Fact]

@@ -14,20 +14,18 @@ run = "dotnet test ce-record-chain.sln --no-restore --configuration Release"
 
 [tasks.publish]
 shell = "powershell.exe -NoProfile -Command"
-run = [
-  '''
-  $paths = @(
-    'artifacts/ce-record-chain-3.0.0-win-x64'
-    'artifacts/ce-record-chain-3.0.0-win-x64.zip'
-  )
-
-  foreach ($path in $paths) {
-    if (Test-Path $path) {
-      Remove-Item -Recurse -Force $path
-    }
-  }
-  ''',
-  "dotnet restore src/CreationEngine.RecordChain/CreationEngine.RecordChain.csproj --locked-mode",
-  "dotnet publish src/CreationEngine.RecordChain/CreationEngine.RecordChain.csproj --configuration Release --no-restore --no-self-contained -p:DebugType=None -p:DebugSymbols=false --output artifacts/ce-record-chain-3.0.0-win-x64",
-  "& C:/Windows/System32/tar.exe -a -c -f artifacts/ce-record-chain-3.0.0-win-x64.zip -C artifacts/ce-record-chain-3.0.0-win-x64 .",
-]
+run = '''
+$ErrorActionPreference = 'Stop'
+$projectPath = 'src/CreationEngine.RecordChain/CreationEngine.RecordChain.csproj'
+[xml] $project = Get-Content $projectPath
+$version = [string] $project.Project.PropertyGroup.Version
+$folder = "artifacts/ce-record-chain-$version-win-x64"
+$archive = "$folder.zip"
+foreach ($path in @($folder, $archive)) {
+  if (Test-Path $path) { Remove-Item -Recurse -Force $path }
+}
+dotnet publish $projectPath --configuration Release --no-self-contained -p:RestoreLockedMode=true -p:DebugType=None -p:DebugSymbols=false --output $folder
+if ($LASTEXITCODE -ne 0) { throw 'Publish failed.' }
+& "$env:SystemRoot/System32/tar.exe" -a -c -f $archive -C $folder .
+if ($LASTEXITCODE -ne 0) { throw 'Archive creation failed.' }
+'''

@@ -11,7 +11,6 @@ Use this skill directory as the working directory.
 
 ```powershell
 mise trust mise.toml
-mise install
 ```
 
 ## Query

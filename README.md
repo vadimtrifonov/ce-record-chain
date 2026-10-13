@@ -112,7 +112,6 @@ Source builds use [mise](https://mise.jdx.dev/), which installs the .NET SDK.
 
 ```powershell
 mise trust
-mise install
 mise run build
 ```
 
